@@ -191,7 +191,7 @@ def process_conversation(messages):
     while not done:
         try:
             completion = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=working_messages,
                 tools=tools,
             )
