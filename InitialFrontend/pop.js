@@ -57,7 +57,7 @@ Paste this script into browser console */
         opacity: 0;
         transform: translateY(20px) scale(0.95);
         pointer-events: none;
-        resize: both;
+        resize: none; /* Changed from 'both' to 'none' to remove the default resize handle */
       }
   
       #mavgrades-chat-widget.open #mavgrades-chat-popup {
@@ -84,6 +84,24 @@ Paste this script into browser console */
         display: flex;
         align-items: center;
         gap: 10px;
+      }
+      
+      #mavgrades-new-chat {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+
+      #mavgrades-new-chat:hover {
+        background: rgba(255, 255, 255, 0.3);
       }
   
       #mavgrades-resize-toggle,
@@ -218,10 +236,10 @@ Paste this script into browser console */
   
       #mavgrades-resize-handle {
         position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 20px;
-        height: 20px;
+        left: 0;
+        top: 0;
+        width: 16px;
+        height: 16px;
         cursor: nwse-resize;
         background: rgba(0, 79, 148, 0.2);
         border-radius: 0 0 12px 0;
@@ -231,6 +249,7 @@ Paste this script into browser console */
         font-size: 12px;
         color: rgba(0, 79, 148, 0.8);
         user-select: none;
+        z-index: 1;
       }
   
       #mavgrades-resize-handle:hover {
@@ -310,9 +329,11 @@ Paste this script into browser console */
             </svg>
         </div>
         <div id="mavgrades-chat-popup">
+            <div id="mavgrades-resize-handle">⬉</div>
             <div id="mavgrades-chat-header">
                 <div id="mavgrades-chat-title">MavBuddy</div>
                 <div class="mavgrades-header-buttons">
+                    <button id="mavgrades-new-chat">New Chat</button>
                     <button id="mavgrades-resize-toggle" title="Toggle full size">⤢</button>
                     <button id="mavgrades-chat-close">✕</button>
                 </div>
@@ -327,7 +348,6 @@ Paste this script into browser console */
                     </svg>
                 </button>
             </div>
-            <div id="mavgrades-resize-handle">⇲</div>
         </div>
     `;
 
@@ -337,10 +357,40 @@ Paste this script into browser console */
     widget.innerHTML = widgetHTML;
     document.body.appendChild(widget);
 
+    // Cookie management functions
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};expires=${expires.toUTCString()};path=/`;
+    }
+
+    function getCookie(name) {
+        const nameEQ = `${name}=`;
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1);
+            if (c.indexOf(nameEQ) === 0) {
+                try {
+                    return JSON.parse(decodeURIComponent(c.substring(nameEQ.length)));
+                } catch (e) {
+                    console.error('Error parsing cookie:', e);
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    function deleteCookie(name) {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+
     // DOM references
     const chatButton = document.getElementById('mavgrades-chat-button');
     const chatPopup = document.getElementById('mavgrades-chat-popup');
     const closeButton = document.getElementById('mavgrades-chat-close');
+    const newChatButton = document.getElementById('mavgrades-new-chat');
     const messagesContainer = document.getElementById('mavgrades-chat-messages');
     const inputField = document.getElementById('mavgrades-chat-input');
     const sendButton = document.getElementById('mavgrades-chat-send');
@@ -374,8 +424,11 @@ Paste this script into browser console */
     function resize(e) {
         if (!isResizing) return;
 
-        const newWidth = initialWidth + (e.clientX - initialX);
-        const newHeight = initialHeight + (e.clientY - initialY);
+        const deltaX = initialX - e.clientX;
+        const deltaY = initialY - e.clientY;
+        
+        const newWidth = initialWidth + deltaX;
+        const newHeight = initialHeight + deltaY;
 
         // Apply size constraints
         if (newWidth >= 300) {
@@ -446,6 +499,7 @@ Paste this script into browser console */
     // Event listeners
     chatButton.addEventListener('click', toggleChat);
     closeButton.addEventListener('click', closeChat);
+    newChatButton.addEventListener('click', startNewChat);
     sendButton.addEventListener('click', sendMessage);
     inputField.addEventListener('input', () => {
         sendButton.disabled = inputField.value.trim() === '' || state.isGenerating;
@@ -472,8 +526,39 @@ Paste this script into browser console */
             chatPopup.style.height = savedHeight;
         }
 
+        // Load conversation history from cookie
+        const savedMessages = getCookie('mavgrades-chat-history');
+        if (savedMessages && savedMessages.length > 1) {
+            state.messages = savedMessages;
+
+            // Render saved messages
+            messagesContainer.innerHTML = '';
+            savedMessages.forEach(msg => {
+                if (msg.role !== 'system') {
+                    appendMessage(msg.role, msg.content);
+                }
+            });
+        } else {
+            // Show welcome message for new conversations
+            appendMessage('assistant', 'Welcome to MavGrades! How may I help you with course information today?');
+        }
+    }
+
+    // Start a new chat
+    function startNewChat() {
+        // Clear messages except the system message
+        state.messages = [
+            { role: 'system', content: 'You are MavGrades, a helpful assistant that provides information about classes and courses.' }
+        ];
+
+        // Clear the messages container
+        messagesContainer.innerHTML = '';
+
         // Show welcome message
-        appendMessage('assistant', 'Welcome to MavGrades! How may I help you with course information today?');
+        appendMessage('assistant', 'Starting a new conversation. How may I help you today?');
+
+        // Save to cookie
+        setCookie('mavgrades-chat-history', state.messages, 7);
     }
 
     // Toggle chat visibility
@@ -612,6 +697,9 @@ Paste this script into browser console */
             role: 'user',
             content: userMessage
         });
+        
+        // Save conversation to cookie
+        setCookie('mavgrades-chat-history', state.messages, 7);
 
         // Show typing indicator
         addTypingIndicator();
@@ -702,6 +790,9 @@ Paste this script into browser console */
                 role: 'assistant',
                 content: fullResponse
             });
+            
+            // Save updated conversation to cookie
+            setCookie('mavgrades-chat-history', state.messages, 7);
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -729,6 +820,9 @@ Paste this script into browser console */
                 // Subsequent error - simple message
                 appendMessage('assistant', 'Still unable to connect to the API. Please use the full chat interface in a separate browser tab.');
             }
+            
+            // Save error message to cookie
+            setCookie('mavgrades-chat-history', state.messages, 7);
         } finally {
             state.isGenerating = false;
             sendButton.disabled = inputField.value.trim() === '';
@@ -742,6 +836,7 @@ Paste this script into browser console */
     // Expose functions to global scope for external use
     window.toggleMavGradesChat = toggleChat;
     window.changeApiEndpoint = changeApiEndpoint;
+    window.startNewMavGradesChat = startNewChat;
 
     console.log('MavGrades Chat Widget initialized. Use window.toggleMavGradesChat() to toggle it programmatically.');
 })();
