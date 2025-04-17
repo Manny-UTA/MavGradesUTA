@@ -1,322 +1,325 @@
-/**
- * MavGrades Popup Chat Widget
- * Paste this entire script into your browser console to add the chat widget to any page
- */
+/** MavGrades Chat Widget with UTA-inspired gradient theme 
+
+Paste this script into browser console */
+
 (function() {
-    // Create a style element for our CSS
     const style = document.createElement('style');
     style.textContent = `
-        /* Chat Widget Styles */
-        #mavgrades-chat-widget {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 9999;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            transition: all 0.3s ease;
-        }
+      /* Chat Widget Styles */
+      #mavgrades-chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        transition: all 0.3s ease;
+      }
+  
+      #mavgrades-chat-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(to bottom right, #004f94, #4b2600);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+      }
+  
+      #mavgrades-chat-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
+  
+      #mavgrades-chat-icon {
+        width: 30px;
+        height: 30px;
+      }
+  
+      #mavgrades-chat-popup {
+        position: absolute;
+        bottom: 80px;
+        right: 0;
+        width: 350px;
+        height: 500px;
+        min-width: 300px;
+        min-height: 400px;
+        background-color: #f7f7f8;
+        border-radius: 12px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        pointer-events: none;
+        resize: none; /* Changed from 'both' to 'none' to remove the default resize handle */
+      }
+  
+      #mavgrades-chat-widget.open #mavgrades-chat-popup {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: all;
+      }
+  
+      #mavgrades-chat-header {
+        padding: 15px;
+        background: linear-gradient(to right, #004f94, #4b2600);
+        color: white;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+  
+      #mavgrades-chat-title {
+        font-size: 16px;
+      }
+  
+      .mavgrades-header-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      #mavgrades-new-chat {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
 
-        #mavgrades-chat-button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #712b8f;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
-        }
+      #mavgrades-new-chat:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+  
+      #mavgrades-resize-toggle,
+      #mavgrades-chat-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+      }
+  
+      #mavgrades-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #f5f5f7;
+        display: flex;
+        flex-direction: column;
+      }
+  
+      .mavgrades-message {
+        display: flex;
+        margin-bottom: 15px;
+        gap: 10px;
+        max-width: 85%;
+      }
+  
+      .mavgrades-user-message {
+        margin-left: auto;
+        flex-direction: row-reverse;
+      }
+  
+      .mavgrades-message-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+  
+      .mavgrades-assistant-avatar {
+        background-color: #004f94;
+        color: white;
+      }
+  
+      .mavgrades-user-avatar {
+        background-color: #e1e1e6;
+        color: #333;
+      }
+  
+      .mavgrades-message-bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        line-height: 1.4;
+        font-size: 14px;
+      }
+  
+      .mavgrades-assistant-bubble {
+        background-color: white;
+        color: #333;
+        border-top-left-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+  
+      .mavgrades-user-bubble {
+        background-color: #F58025;
+        color: white;
+        border-top-right-radius: 4px;
+      }
 
-        #mavgrades-chat-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        #mavgrades-chat-icon {
-            width: 30px;
-            height: 30px;
-        }
-
+  
+      #mavgrades-chat-input-area {
+        padding: 15px;
+        border-top: 1px solid #e1e1e6;
+        background-color: white;
+        display: flex;
+      }
+  
+      #mavgrades-chat-input {
+        flex: 1;
+        border: 1px solid #e1e1e6;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        resize: none;
+        height: 38px;
+        min-height: 38px;
+        max-height: 120px;
+        outline: none;
+        font-family: inherit;
+      }
+  
+      #mavgrades-chat-input:focus {
+        border-color: #004f94;
+      }
+  
+      #mavgrades-chat-send {
+        background-color: #004f94;
+        color: white;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        margin-left: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+  
+      #mavgrades-chat-send:hover {
+        opacity: 1;
+        background-color: #003366;
+      }
+  
+      #mavgrades-chat-send:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+  
+      #mavgrades-resize-handle {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        cursor: nwse-resize;
+        background: rgba(0, 79, 148, 0.2);
+        border-radius: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: rgba(0, 79, 148, 0.8);
+        user-select: none;
+        z-index: 1;
+      }
+  
+      #mavgrades-resize-handle:hover {
+        background: rgba(0, 79, 148, 0.3);
+      }
+  
+      .mavgrades-typing-indicator {
+        display: flex;
+        padding: 10px 14px;
+        background: white;
+        border-radius: 18px;
+        border-top-left-radius: 4px;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
+        max-width: 85%;
+        width: max-content;
+      }
+  
+      .mavgrades-typing-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #888;
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: mavgrades-typing 1.4s infinite ease-in-out both;
+      }
+  
+      .mavgrades-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+      .mavgrades-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+  
+      @keyframes mavgrades-typing {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+  
+      .mavgrades-message-bubble a {
+        color: #004f94;
+        text-decoration: underline;
+      }
+  
+      .mavgrades-message-bubble code {
+        font-family: monospace;
+        background-color: rgba(0, 0, 0, 0.07);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 13px;
+      }
+  
+      .mavgrades-message-bubble pre {
+        background-color: rgba(0, 0, 0, 0.07);
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 5px 0;
+      }
+  
+      .mavgrades-message-bubble pre code {
+        background: none;
+        padding: 0;
+      }
+  
+      @media (max-width: 480px) {
         #mavgrades-chat-popup {
-            position: absolute;
-            bottom: 80px;
-            right: 0;
-            width: 350px;
-            height: 500px;
-            min-width: 300px;
-            min-height: 400px;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-            pointer-events: none;
-            resize: both;
+          width: 300px;
         }
-
-        #mavgrades-chat-widget.open #mavgrades-chat-popup {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: all;
-        }
-
-        #mavgrades-chat-header {
-            padding: 15px;
-            background-color: #712b8f;
-            color: white;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #mavgrades-chat-title {
-            font-size: 16px;
-        }
-
-        .mavgrades-header-buttons {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #mavgrades-resize-toggle {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-        }
-
-        #mavgrades-chat-close {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-        }
-
-        #mavgrades-chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #f5f5f7;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .mavgrades-message {
-            display: flex;
-            margin-bottom: 15px;
-            gap: 10px;
-            max-width: 85%;
-        }
-
-        .mavgrades-user-message {
-            margin-left: auto;
-            flex-direction: row-reverse;
-        }
-
-        .mavgrades-message-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 14px;
-        }
-
-        .mavgrades-assistant-avatar {
-            background-color: #712b8f;
-            color: white;
-        }
-
-        .mavgrades-user-avatar {
-            background-color: #e1e1e6;
-            color: #333;
-        }
-
-        .mavgrades-message-bubble {
-            padding: 10px 14px;
-            border-radius: 18px;
-            line-height: 1.4;
-            font-size: 14px;
-        }
-
-        .mavgrades-assistant-bubble {
-            background-color: white;
-            color: #333;
-            border-top-left-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .mavgrades-user-bubble {
-            background-color: #712b8f;
-            color: white;
-            border-top-right-radius: 4px;
-        }
-
-        #mavgrades-chat-input-area {
-            padding: 15px;
-            border-top: 1px solid #e1e1e6;
-            background-color: white;
-            display: flex;
-        }
-
-        #mavgrades-chat-input {
-            flex: 1;
-            border: 1px solid #e1e1e6;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
-            resize: none;
-            height: 38px;
-            min-height: 38px;
-            max-height: 120px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        #mavgrades-chat-input:focus {
-            border-color: #712b8f;
-        }
-
-        #mavgrades-chat-send {
-            background-color: #712b8f;
-            color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            margin-left: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        #mavgrades-chat-send:hover {
-            opacity: 1;
-        }
-
-        #mavgrades-chat-send:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* Resize handle */
-        #mavgrades-resize-handle {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 20px;
-            height: 20px;
-            cursor: nwse-resize;
-            background: rgba(113, 43, 143, 0.2);
-            border-radius: 0 0 12px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: rgba(113, 43, 143, 0.8);
-            user-select: none;
-        }
-
-        #mavgrades-resize-handle:hover {
-            background: rgba(113, 43, 143, 0.3);
-        }
-
-        .mavgrades-typing-indicator {
-            display: flex;
-            padding: 10px 14px;
-            background: white;
-            border-radius: 18px;
-            border-top-left-radius: 4px;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            margin-bottom: 15px;
-            max-width: 85%;
-            width: max-content;
-        }
-
-        .mavgrades-typing-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #888;
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: mavgrades-typing 1.4s infinite ease-in-out both;
-        }
-
-        .mavgrades-typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .mavgrades-typing-dot:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes mavgrades-typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        .mavgrades-message-bubble a {
-            color: inherit;
-            text-decoration: underline;
-        }
-
-        .mavgrades-assistant-bubble a {
-            color: #712b8f;
-        }
-
-        .mavgrades-message-bubble code {
-            font-family: monospace;
-            background-color: rgba(0, 0, 0, 0.07);
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-size: 13px;
-        }
-
-        .mavgrades-message-bubble pre {
-            background-color: rgba(0, 0, 0, 0.07);
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-            margin: 5px 0;
-        }
-
-        .mavgrades-message-bubble pre code {
-            background: none;
-            padding: 0;
-        }
-
-        @media (max-width: 480px) {
-            #mavgrades-chat-popup {
-                width: 300px;
-            }
-        }
+      }
     `;
     document.head.appendChild(style);
+  
 
     // Create HTML structure
     const widgetHTML = `
@@ -326,9 +329,11 @@
             </svg>
         </div>
         <div id="mavgrades-chat-popup">
+            <div id="mavgrades-resize-handle">⬉</div>
             <div id="mavgrades-chat-header">
-                <div id="mavgrades-chat-title">MavGrades Assistant</div>
+                <div id="mavgrades-chat-title">MavBuddy</div>
                 <div class="mavgrades-header-buttons">
+                    <button id="mavgrades-new-chat">New Chat</button>
                     <button id="mavgrades-resize-toggle" title="Toggle full size">⤢</button>
                     <button id="mavgrades-chat-close">✕</button>
                 </div>
@@ -343,7 +348,6 @@
                     </svg>
                 </button>
             </div>
-            <div id="mavgrades-resize-handle">⇲</div>
         </div>
     `;
 
@@ -353,10 +357,40 @@
     widget.innerHTML = widgetHTML;
     document.body.appendChild(widget);
 
+    // Cookie management functions
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};expires=${expires.toUTCString()};path=/`;
+    }
+
+    function getCookie(name) {
+        const nameEQ = `${name}=`;
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1);
+            if (c.indexOf(nameEQ) === 0) {
+                try {
+                    return JSON.parse(decodeURIComponent(c.substring(nameEQ.length)));
+                } catch (e) {
+                    console.error('Error parsing cookie:', e);
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    function deleteCookie(name) {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+
     // DOM references
     const chatButton = document.getElementById('mavgrades-chat-button');
     const chatPopup = document.getElementById('mavgrades-chat-popup');
     const closeButton = document.getElementById('mavgrades-chat-close');
+    const newChatButton = document.getElementById('mavgrades-new-chat');
     const messagesContainer = document.getElementById('mavgrades-chat-messages');
     const inputField = document.getElementById('mavgrades-chat-input');
     const sendButton = document.getElementById('mavgrades-chat-send');
@@ -390,8 +424,11 @@
     function resize(e) {
         if (!isResizing) return;
 
-        const newWidth = initialWidth + (e.clientX - initialX);
-        const newHeight = initialHeight + (e.clientY - initialY);
+        const deltaX = initialX - e.clientX;
+        const deltaY = initialY - e.clientY;
+        
+        const newWidth = initialWidth + deltaX;
+        const newHeight = initialHeight + deltaY;
 
         // Apply size constraints
         if (newWidth >= 300) {
@@ -455,13 +492,14 @@
             { role: 'system', content: 'You are MavGrades, a helpful assistant that provides information about classes and courses.' }
         ],
         isGenerating: false,
-        apiUrl: 'https://DOMAIN/v1/chat/completions',
+        apiUrl: 'https://c31a-129-107-192-14.ngrok-free.app/v1/chat/completions',
         fallbackMode: false
     };
 
     // Event listeners
     chatButton.addEventListener('click', toggleChat);
     closeButton.addEventListener('click', closeChat);
+    newChatButton.addEventListener('click', startNewChat);
     sendButton.addEventListener('click', sendMessage);
     inputField.addEventListener('input', () => {
         sendButton.disabled = inputField.value.trim() === '' || state.isGenerating;
@@ -488,8 +526,39 @@
             chatPopup.style.height = savedHeight;
         }
 
+        // Load conversation history from cookie
+        const savedMessages = getCookie('mavgrades-chat-history');
+        if (savedMessages && savedMessages.length > 1) {
+            state.messages = savedMessages;
+
+            // Render saved messages
+            messagesContainer.innerHTML = '';
+            savedMessages.forEach(msg => {
+                if (msg.role !== 'system') {
+                    appendMessage(msg.role, msg.content);
+                }
+            });
+        } else {
+            // Show welcome message for new conversations
+            appendMessage('assistant', 'Welcome to MavGrades! How may I help you with course information today?');
+        }
+    }
+
+    // Start a new chat
+    function startNewChat() {
+        // Clear messages except the system message
+        state.messages = [
+            { role: 'system', content: 'You are MavGrades, a helpful assistant that provides information about classes and courses.' }
+        ];
+
+        // Clear the messages container
+        messagesContainer.innerHTML = '';
+
         // Show welcome message
-        appendMessage('assistant', 'Welcome to MavGrades! How may I help you with course information today?');
+        appendMessage('assistant', 'Starting a new conversation. How may I help you today?');
+
+        // Save to cookie
+        setCookie('mavgrades-chat-history', state.messages, 7);
     }
 
     // Toggle chat visibility
@@ -628,6 +697,9 @@
             role: 'user',
             content: userMessage
         });
+        
+        // Save conversation to cookie
+        setCookie('mavgrades-chat-history', state.messages, 7);
 
         // Show typing indicator
         addTypingIndicator();
@@ -718,6 +790,9 @@
                 role: 'assistant',
                 content: fullResponse
             });
+            
+            // Save updated conversation to cookie
+            setCookie('mavgrades-chat-history', state.messages, 7);
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -745,6 +820,9 @@
                 // Subsequent error - simple message
                 appendMessage('assistant', 'Still unable to connect to the API. Please use the full chat interface in a separate browser tab.');
             }
+            
+            // Save error message to cookie
+            setCookie('mavgrades-chat-history', state.messages, 7);
         } finally {
             state.isGenerating = false;
             sendButton.disabled = inputField.value.trim() === '';
@@ -758,6 +836,7 @@
     // Expose functions to global scope for external use
     window.toggleMavGradesChat = toggleChat;
     window.changeApiEndpoint = changeApiEndpoint;
+    window.startNewMavGradesChat = startNewChat;
 
     console.log('MavGrades Chat Widget initialized. Use window.toggleMavGradesChat() to toggle it programmatically.');
 })();
