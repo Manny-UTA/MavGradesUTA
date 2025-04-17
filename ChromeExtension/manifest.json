@@ -1,0 +1,37 @@
+{
+    "manifest_version": 3,
+    "name": "MavBuddy",
+    "version": "0.2.0",
+    "description": "Automatically runs pop.js when mavgrades.com is loaded",
+    "permissions": [
+      "scripting",
+      "activeTab"
+    ],
+    "action": {
+      "default_icon": {
+        "16": "icon.png",
+        "48": "icon.png",
+        "128": "icon.png"
+      }
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["*://mavgrades.com/*", "*://www.mavgrades.com/*", "https://mavgrades.uta.edu/*"],
+        "js": ["content.js"],
+        "run_at": "document_end"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["pop.js"],
+        "matches": ["*://mavgrades.com/*", "*://www.mavgrades.com/*", "https://mavgrades.uta.edu/*", "<all_urls>"]
+      }
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'",
+      "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self'; connect-src 'self' http: https:"
+    }
+}
