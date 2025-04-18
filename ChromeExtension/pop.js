@@ -492,7 +492,7 @@ Paste this script into browser console */
             { role: 'system', content: 'You are MavGrades, a helpful assistant that provides information about classes and courses.' }
         ],
         isGenerating: false,
-        apiUrl: 'https://c31a-129-107-192-14.ngrok-free.app/v1/chat/completions',
+        apiUrl: 'https://mavbuddy-backend.vercel.app/v1/chat/completions',
         fallbackMode: false
     };
 
@@ -800,20 +800,7 @@ Paste this script into browser console */
 
             if (!state.fallbackMode) {
                 // First time error - suggest fallback options
-                const errorMsg = `
-                    <p>I'm having trouble connecting to the MavGrades API. This might be due to:</p>
-                    <ul>
-                        <li>The API server isn't running at <code>${state.apiUrl}</code></li>
-                        <li>An ad blocker or security extension is blocking the request</li>
-                        <li>CORS policy restrictions from your browser</li>
-                    </ul>
-                    <p>Try these solutions:</p>
-                    <ol>
-                        <li>Make sure the API server is running</li>
-                        <li>Temporarily disable ad blockers</li>
-                        <li>Use the <a href="#" onclick="changeApiEndpoint(); return false;">direct interface</a> instead</li>
-                    </ol>
-                `;
+                const errorMsg = `Error, please try again.`;
                 appendMessage('assistant', errorMsg);
                 state.fallbackMode = true;
             } else {
