@@ -152,13 +152,13 @@ Paste this script into browser console */
       }
   
       .mavgrades-assistant-avatar {
-        background-color: #004f94;
-        color: white;
+        background-image: url('https://i.imgur.com/P805pvp.jpeg');
+        background-size: cover;
+        background-position: center;
       }
   
       .mavgrades-user-avatar {
-        background-color: #e1e1e6;
-        color: #333;
+        display: none; /* Removed user avatar */
       }
   
       .mavgrades-message-bubble {
@@ -196,8 +196,8 @@ Paste this script into browser console */
         padding: 8px 16px;
         font-size: 14px;
         resize: none;
-        height: 38px;
-        min-height: 38px;
+        height: 40px;
+        min-height: 40px;
         max-height: 120px;
         outline: none;
         font-family: inherit;
@@ -211,8 +211,8 @@ Paste this script into browser console */
         background-color: #004f94;
         color: white;
         border: none;
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         margin-left: 10px;
         cursor: pointer;
@@ -589,9 +589,9 @@ Paste this script into browser console */
         avatar.className = `mavgrades-message-avatar ${role === 'user' ? 'mavgrades-user-avatar' : 'mavgrades-assistant-avatar'}`;
 
         if (role === 'user') {
-            avatar.textContent = 'U';
+            // User avatar is hidden via CSS
         } else {
-            avatar.textContent = 'M';
+            // Using mavbuddyicon.jpg instead of text content
         }
 
         const messageBubble = document.createElement('div');
